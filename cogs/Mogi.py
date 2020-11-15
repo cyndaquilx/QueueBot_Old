@@ -93,21 +93,6 @@ class Mogi(commands.Cog):
                 if player.id == member.id:
                     return i
         return False
-
-    async def confirm_squad(self, ctx, i: int):
-        squad = self.waiting[i]
-        squad2 = {}
-        teamMsg = ""
-        totalMMR = 0
-        for player in squad.keys():
-            playerMMR = int(squad[player][1])
-            squad2[player] = playerMMR
-            totalMMR += playerMMR
-            teamMsg += "%s (%d MMR)\n" % (player.display_name, int(playerMMR))
-        self.avgMMRs.append(int(totalMMR/self.size))
-        self.waiting.pop(i)
-        self.list.append(squad2)
-        await ctx.send("Squad successfully added to mogi list:\n%s" % teamMsg)
         
     @commands.command(aliases=['c'])
     @commands.max_concurrency(number=1,wait=True)
