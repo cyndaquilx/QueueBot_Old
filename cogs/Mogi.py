@@ -446,7 +446,6 @@ class Mogi(commands.Cog):
         sortTeamsMMR = sorted(zip(self.avgMMRs, indexes), reverse=True)
         sortedMMRs = [x for x, _ in sortTeamsMMR]
         sortedTeams = [self.list[i] for i in (x for _, x in sortTeamsMMR)]
-        await ctx.send(sortedMMRs)
         msg = "`Sorted list`\n"
         for i in range(len(sortedTeams)):
             if i > 0 and i % 15 == 0:
