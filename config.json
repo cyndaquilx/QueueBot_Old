@@ -1,0 +1,11 @@
+{
+	"token": "insert token here",
+	
+	"roles": ["Administrator", "Updater", "Event Organizer"],
+	
+	"mogichannel": 772517883107475516,
+	
+	"randombot_role": 774697511079903243,
+	
+	"boobot_role": 509882868332494849
+}
