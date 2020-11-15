@@ -16,3 +16,5 @@ Make sure that you edit `config.json` so that the following fields have a value:
 - boobot_role: ID of BooBot's role (or whatever you use to get FCs)
 
 Once you have everything set up, run `lounge.py` from the command line
+
+Report any bugs to Cynda#1979 on Discord
