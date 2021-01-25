@@ -1,6 +1,9 @@
 import discord
 from discord.ext import commands
 import json
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 bot = commands.Bot(command_prefix='!', case_insensitive=True)
 
@@ -47,4 +50,3 @@ async def on_command_error(ctx, error):
     raise error
 
 bot.run(config["token"])
-
