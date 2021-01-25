@@ -18,7 +18,7 @@ Make sure that you edit `config.json` so that the following fields have a value:
 - TIME_ADJUSTMENT: Number of hours behind EST that the bot owner's system is (ex. 3 for PST, -6 for CET)
 - QUEUE_OPEN_TIME: Number of minutes before the scheduled time that the queue should open (default: 60)
 - JOINING_TIME: Number of minutes after QUEUE_OPEN_TIME that the queue is open (default: 45)
-- EXTENSION_TIME: Number of minutes after JOINING_TIME for any potential extra teams to join
+- EXTENSION_TIME: Number of minutes after JOINING_TIME for any potential extra teams to join (default: 5)
 
 Once you have everything set up, run `lounge.py` from the command line
 
