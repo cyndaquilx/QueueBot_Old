@@ -111,7 +111,7 @@ class Mogi(commands.Cog):
 
             cur_time = datetime.now()
             if (self.start_time - QUEUE_OPEN_TIME + JOINING_TIME + EXTENSION_TIME) <= cur_time:
-                await self.makeRoomsLogic(self.mogi_channel, (cur_time.minute + 1)%60, True)
+                await self.makeRoomsLogic(self.mogi_channel, (self.start_time.minute)%60, True)
                 return
 
             if self.start_time - QUEUE_OPEN_TIME + JOINING_TIME <= cur_time:
@@ -158,10 +158,20 @@ class Mogi(commands.Cog):
         mogi_channel = self.get_mogi_channel()
         if mogi_channel is not None:
             if len(self.msg_queue) > 0:
+                sentmsgs = []
                 sentmsg = ""
                 for i in range(len(self.msg_queue)-1, -1, -1):
                     sentmsg = self.msg_queue.pop(i) + "\n" + sentmsg
-                await mogi_channel.send(sentmsg)
+                    if len(sentmsg) > 1500:
+                        #await mogi_channel.send(sentmsg)
+                        sentmsgs.append(sentmsg)
+                        sentmsg = ""
+                #else:
+                if len(sentmsg) > 0:
+                    #await mogi_channel.send(sentmsg)
+                    sentmsgs.append(sentmsg)
+                for i in range(len(sentmsgs)-1, -1, -1):
+                    await mogi_channel.send(sentmsgs[i])
 
     def get_mogi_channel(self):
         mogi_channel_id = config["mogichannel"]
@@ -340,20 +350,23 @@ class Mogi(commands.Cog):
         # logic for when the correct number of arguments are supplied
         # (self.size - 1)
         players = {ctx.author: [True]}
-        playerMMR = await sheet.mmr(ctx.author)
-        if playerMMR is False:
+        lookupMembers = [ctx.author.display_name]
+        lookupMembers += [member.display_name for member in members]
+        #playerMMR = await sheet.mmr(ctx.author)
+        playerMMRs = await sheet.mmr(lookupMembers)
+        if playerMMRs[0] is False:
             await self.queue_or_send(ctx, "Error: MMR for player %s cannot be found! Please contact a staff member for help"
                                      % ctx.author.display_name, delay=10)
             return
-        players[ctx.author].append(playerMMR)
+        players[ctx.author].append(playerMMRs[0])
         for i in range(self.size-1):
             players[members[i]] = [False]
-            playerMMR = await sheet.mmr(members[i])
-            if playerMMR is False:
+            #playerMMR = await sheet.mmr(members[i])
+            if playerMMRs[i+1] is False:
                 await self.queue_or_send(ctx, "Error: MMR for player %s cannot be found! Please contact a staff member for help"
                                          % members[i].display_name, delay=10)
                 return
-            players[members[i]].append(playerMMR)
+            players[members[i]].append(playerMMRs[i+1])
         self.waiting.append(players)
         
         msg = "%s has created a squad with " % ctx.author.display_name
@@ -518,7 +531,7 @@ class Mogi(commands.Cog):
             
 
     @commands.command(aliases=['l'])
-    @commands.cooldown(1, 40)
+    @commands.cooldown(1, 120)
     @commands.guild_only()
     async def list(self, ctx):
         """Display the list of confirmed squads for a mogi; sends 15 at a time to avoid
@@ -646,7 +659,7 @@ class Mogi(commands.Cog):
         sortedTeams = [finalList[i] for i in (x for _, x in sortTeamsMMR)]
         for i in range(int(numRooms/40)+1):
             cat = await mogi_channel.guild.create_category_channel(name="Rooms %d" % (i+1),
-                                                                   position=config["channel_category_position"]+i)
+                                                                   position=config["channel_category_position"])
             self.categories.append(cat)
         for i in range(numRooms):
 
@@ -733,7 +746,7 @@ class Mogi(commands.Cog):
        
     @staticmethod
     async def start_input_validation(ctx, size:int):
-        valid_sizes = [2, 3, 4]
+        valid_sizes = [2, 3, 4, 6]
         if size not in valid_sizes:
             await(await ctx.send("The size you entered is invalid; proper values are: 2, 3, 4")).delete(delay=5)
             return False
