@@ -21,21 +21,21 @@ class Sheet(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         
-    async def mmr(self, member: discord.Member):
-        name = member.display_name
-        #updates cell B3 of the lookup sheet with the member name
-        mmrs.update_cell(3, 2, name)
-        #cell C3 of the lookup sheet returns the member's MMR,
-        #if found, otherwise returns "N"
-        check_value = mmrs.acell('C3').value
-        #if player has placement mmr, sets it to 1000
-        #for the sake of getting a team mmr average
-        if check_value == "Placement":
-            check_value = 1000
-        #if player isn't found in sheet/database, return False
-        if check_value == "N":
-            check_value = False
-        return check_value
+    #async def mmr(self, member: discord.Member):
+    async def mmr(self, members):
+        mmrs.update('B3:B%d' % int(2+len(members)), [[member] for member in members])
+        check_values = mmrs.get('C3:C%d' % int(2+len(members)))
+        return_mmrs = []
+        for mmr in check_values:
+            if mmr[0] == "Placement":
+                return_mmrs.append(3000)
+                continue
+            if mmr[0] == "N":
+                return_mmrs.append(False)
+                continue
+            return_mmrs.append(int(mmr[0]))
+        print(return_mmrs)
+        return return_mmrs   
 
 def setup(bot):
     bot.add_cog(Sheet(bot))
