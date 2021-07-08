@@ -703,9 +703,14 @@ class Mogi(commands.Cog):
             roomMsg += ("\nDecide a host amongst yourselves; room open at :%02d, start at :%02d. Good luck!\n\n"
                         % (openTime, startTime))
             roomMsg += mentions
-            roomChannel = await category.create_text_channel(name=roomName, overwrites=overwrites)
-            self.channels.append([roomChannel, False])
-            await roomChannel.send(roomMsg)
+            try:
+                roomChannel = await category.create_text_channel(name=roomName, overwrites=overwrites)
+                self.channels.append([roomChannel, False])
+                await roomChannel.send(roomMsg)
+            except Exception as e:
+                errMsg = f"\nAn error has occurred while creating the room channel; please contact your opponents in DM or another channel\n"
+                errMsg += mentions
+                msg += errMsg
             await mogi_channel.send(msg)
             
         if numTeams < len(self.list):
