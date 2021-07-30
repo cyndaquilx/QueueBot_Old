@@ -645,7 +645,10 @@ class Mogi(commands.Cog):
         if openTime >= 60 or openTime < 0:
             await mogi_channel.send("Please specify a valid time (in minutes) for rooms to open (00-59)")
             return
+        penTime = openTime + 5
         startTime = openTime + 10
+        while penTime >= 60:
+            penTime -= 60
         while startTime >= 60:
             startTime -= 60
             
@@ -700,8 +703,8 @@ class Mogi(commands.Cog):
                     scoreboard += ","
             
             roomMsg += "%s`\n" % scoreboard
-            roomMsg += ("\nDecide a host amongst yourselves; room open at :%02d, start at :%02d. Good luck!\n\n"
-                        % (openTime, startTime))
+            roomMsg += ("\nDecide a host amongst yourselves; room open at :%02d, penalty at :%02d, start by :%02d. Good luck!\n\n"
+                        % (openTime, penTime, startTime))
             roomMsg += mentions
             try:
                 roomChannel = await category.create_text_channel(name=roomName, overwrites=overwrites)
