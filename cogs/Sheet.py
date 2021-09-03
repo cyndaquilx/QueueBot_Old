@@ -28,7 +28,7 @@ class Sheet(commands.Cog):
         return_mmrs = []
         for mmr in check_values:
             if mmr[0] == "Placement":
-                return_mmrs.append(3000)
+                return_mmrs.append(2000)
                 continue
             if mmr[0] == "N":
                 return_mmrs.append(False)
