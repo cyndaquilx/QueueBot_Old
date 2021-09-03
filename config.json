@@ -1,19 +1,19 @@
 {
 	"token": "insert bot token here",
 	
-	"roles": ["Administrator", "Updater", "Event Organizer"],
+	"roles": ["Administrator", "Moderator", "Updater", "Event Organizer"],
 	
-	"mogichannel": 741906846209671223,
+	"mogichannel": 772517883107475516,
 
-	"roles_for_channels": [774697511079903243, 509882868332494849],
+	"roles_for_channels": [816560050575114240, 774697511079903243, 795560860215017482, 780528917759918090],
 
-	"channel_category_position": 7,
+	"channel_category_position": 5,
 
 	"queue_messages": true,
 	"sec_between_queue_msgs": 2,
 
 	"TIME_ADJUSTMENT": 0,
-	"QUEUE_OPEN_TIME": 60,
-	"JOINING_TIME": 45,
+	"QUEUE_OPEN_TIME": 75,
+	"JOINING_TIME": 60,
 	"EXTENSION_TIME": 5
 }
