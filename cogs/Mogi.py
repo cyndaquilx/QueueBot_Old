@@ -532,7 +532,7 @@ class Mogi(commands.Cog):
     async def remakeRooms(self, ctx, openTime:int):
         self.making_rooms_run = False
         await self.deleteChannels()
-        await self.makeRooms(self, ctx, openTime)
+        await self.makeRooms(ctx, openTime)
 
     @commands.command()
     @commands.guild_only()
