@@ -4,6 +4,7 @@ import json
 from dateutil.parser import parse
 from datetime import datetime, timedelta
 import collections
+import time
 
 with open('./config.json', 'r') as cjson:
             config = json.load(cjson)
@@ -93,10 +94,13 @@ class Mogi(commands.Cog):
         to_remove = [] #Keep a list of indexes to remove - can't remove while iterating
         for ind, event in enumerate(self.scheduled_events):
             if (event.time - QUEUE_OPEN_TIME) < cur_time:
-                if self.started or self.gathering: #We can't start a new event while the current event is already going
+                #if self.started or self.gathering: #We can't start a new event while the current event is already going
+                if self.gathering:
                     to_remove.append(ind)
                     await event.mogi_channel.send(f"Because there is an ongoing event right now, the following event has been removed: {self.get_event_str(event)}\n")
                 else:
+                    if self.started:
+                        await self.endMogi()
                     to_remove.append(ind)
                     await self.launch_mogi(event.mogi_channel, event.size, True, event.time)
                     await self.unlockdown(event.mogi_channel)
@@ -498,6 +502,38 @@ class Mogi(commands.Cog):
         self.is_automated = False
         await ctx.send("Mogi is now open; players can join and drop from the event")
 
+    async def deleteChannels(self):
+        for i in range(len(self.channels)-1, -1, -1):
+            try:
+                await self.channels[i][0].delete()
+                self.channels.pop(i)
+            except:
+                pass
+        for i in range(len(self.categories)-1, -1, -1):
+            try:
+                await self.categories[i].delete()
+                self.categories.pop(i)
+            except:
+                pass  
+
+    async def endMogi(self):
+        await self.deleteChannels()
+        self.started = False
+        self.gathering = False
+        self.making_rooms_run = False
+        self.is_automated = False
+        self.mogi_channel = None
+        self.start_time = None
+        self.waiting = []
+        self.list = []
+        self.avgMMRs = []
+
+    @commands.command()
+    async def remakeRooms(self, ctx, openTime:int):
+        self.making_rooms_run = False
+        await self.deleteChannels()
+        await self.makeRooms(self, ctx, openTime)
+
     @commands.command()
     @commands.guild_only()
     async def end(self, ctx):
@@ -508,32 +544,14 @@ class Mogi(commands.Cog):
             await Mogi.is_started(self, ctx)
         except:
             return
-        try:
-            for i in range(len(self.channels)-1, -1, -1):
-                await self.channels[i][0].delete()
-                self.channels.pop(i)
-            for i in range(len(self.categories)-1, -1, -1):
-                await self.categories[i].delete()
-                self.categories.pop(i)
-        except:
-            pass
-        self.started = False
-        self.gathering = False
-        self.making_rooms_run = False
-        self.is_automated = False
-        self.mogi_channel = None
-        self.start_time = None
-        self.waiting = []
-        self.list = []
-        self.avgMMRs = []
-        self.is_rt = True
+        await self.endMogi()
         await ctx.send("%s has ended the mogi" % ctx.author.display_name)
             
 
     @commands.command(aliases=['l'])
     @commands.cooldown(1, 120)
     @commands.guild_only()
-    async def list(self, ctx):
+    async def list(self, ctx, mmrorder=""):
         """Display the list of confirmed squads for a mogi; sends 15 at a time to avoid
            reaching 2000 character limit"""
         try:
@@ -541,21 +559,28 @@ class Mogi(commands.Cog):
             await Mogi.is_started(self, ctx)
         except:
             return
-        if len(self.list) == 0:
+        mogilist = self.list
+        avgMMRs = self.avgMMRs
+        if mmrorder.lower() == "mmr":
+            indexes = range(len(self.avgMMRs))
+            sortTeamsMMR = sorted(zip(self.avgMMRs, indexes), reverse=True)
+            avgMMRs = [x for x, _ in sortTeamsMMR]
+            mogilist = [self.list[i] for i in (x for _, x in sortTeamsMMR)]
+        if len(mogilist) == 0:
             await(await ctx.send("There are no squads in the mogi - confirm %d players to join" % (self.size))).delete(delay=5)
             return
         msg = "`Mogi List`\n"
-        for i in range(len(self.list)):
+        for i in range(len(mogilist)):
             #safeguard against potentially reaching 2000-char msg limit
             if len(msg) > 1500:
                 await ctx.send(msg)
                 msg = ""
             msg += "`%d.` " % (i+1)
-            msg += ", ".join([player.display_name for player in self.list[i].keys()])
-            msg += " (%d MMR)\n" % (self.avgMMRs[i])
+            msg += ", ".join([player.display_name for player in mogilist[i].keys()])
+            msg += " (%d MMR)\n" % (avgMMRs[i])
         if(len(self.list) % (12/self.size) != 0):
             msg += ("`[%d/%d] teams for %d full rooms`"
-                    % ((len(self.list) % (12/self.size)), (12/self.size), int(len(self.list) / (12/self.size))+1))
+                    % ((len(mogilist) % (12/self.size)), (12/self.size), int(len(mogilist) / (12/self.size))+1))
         await ctx.send(msg)
 
     @commands.command()
@@ -633,6 +658,7 @@ class Mogi(commands.Cog):
             await self.lockdown(mogi_channel)
         
         self.making_rooms_run = True
+        catNum = config["channels_per_category"]
         if self.gathering:
             self.gathering = False
             await mogi_channel.send("Mogi is now closed; players can no longer join or drop from the event")
@@ -660,7 +686,7 @@ class Mogi(commands.Cog):
         sortTeamsMMR = sorted(zip(finalMMRs, indexes), reverse=True)
         sortedMMRs = [x for x, _ in sortTeamsMMR]
         sortedTeams = [finalList[i] for i in (x for _, x in sortTeamsMMR)]
-        for i in range(int(numRooms/40)+1):
+        for i in range(int(numRooms/catNum)+1):
             cat = await mogi_channel.guild.create_category_channel(name="Rooms %d" % (i+1),
                                                                    position=config["channel_category_position"])
             self.categories.append(cat)
@@ -669,7 +695,7 @@ class Mogi(commands.Cog):
             #creating room roles and channels
             roomName = "Room %d" % (i+1)
             #category = mogi_channel.category
-            category = self.categories[int(i/40)]
+            category = self.categories[int(i/catNum)]
             overwrites = {
                 mogi_channel.guild.default_role: discord.PermissionOverwrite(read_messages=False),
                 mogi_channel.guild.me: discord.PermissionOverwrite(read_messages=True)
@@ -784,6 +810,14 @@ class Mogi(commands.Cog):
             self.scheduled_events.append(event)
             self.scheduled_events.sort(key=lambda data:data.time)
             await ctx.send(f"Scheduled {Mogi.get_event_str(event)}")
+        except (ValueError, OverflowError):
+            await ctx.send("I couldn't figure out the date and time for your event. Try making it a bit more clear for me.")
+
+    @commands.command(aliases=['pt'])
+    async def parsetime(self, ctx, *, schedule_time:str):
+        try:
+            actual_time = parse(schedule_time)
+            await ctx.send("```<t:" + str(int(time.mktime(actual_time.timetuple()))) + ":F>```")
         except (ValueError, OverflowError):
             await ctx.send("I couldn't figure out the date and time for your event. Try making it a bit more clear for me.")
         
